@@ -18,7 +18,7 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>21</version>
+            <version>21.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -29,6 +29,11 @@
             <groupId>io.github.mkpaz</groupId>
             <artifactId>atlantafx-base</artifactId>
             <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.13.1</version>
         </dependency>
     </dependencies>
 
@@ -69,7 +74,7 @@
                 <version>1.0.23</version>
                 <configuration>
                     <mainClass>com.uniqueapps.music.MusicApplication</mainClass>
-                    <graalvmHome>/home/arpan/Downloads/graalvm-java23-linux-amd64-gluon-23+25.1-dev</graalvmHome>
+                    <graalvmHome>C:/Users/arpan/Downloads/graalvm-java23-windows-amd64-gluon-23+25.1-dev</graalvmHome>
                     <reflectionList>
                         <list>com.uniqueapps.music.HomeController</list>
                         <list>com.uniqueapps.music.Player</list>

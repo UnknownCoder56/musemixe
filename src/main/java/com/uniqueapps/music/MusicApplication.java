@@ -11,13 +11,24 @@ import java.util.Objects;
 
 public class MusicApplication extends Application {
 
+    private HomeController homeController;
+
     @Override
     public void start(Stage stage) throws IOException {
         Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
-        Scene scene = new Scene(FXMLLoader.load(Objects.requireNonNull(MusicApplication.class.getResource("home.fxml"))), 800, 600);
+        FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(MusicApplication.class.getResource("home.fxml")));
+        Scene scene = new Scene(loader.load(), 800, 600);
+        homeController = loader.getController();
         stage.setTitle("MIDI Player");
         stage.setScene(scene);
         stage.show();
+    }
+
+    @Override
+    public void stop() {
+        if (homeController != null) {
+            homeController.shutdownScheduler();
+        }
     }
 
     public static void main(String[] args) {

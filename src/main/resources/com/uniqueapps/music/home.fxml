@@ -1,74 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<VBox fx:controller="com.uniqueapps.music.HomeController" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1">
-   <children>
-      <GridPane hgap="8.0" vgap="8.0">
-        <columnConstraints>
-          <ColumnConstraints halignment="LEFT" hgrow="NEVER" />
-          <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" minWidth="10.0" prefWidth="100.0" />
-        </columnConstraints>
-        <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
-         <children>
-            <Label text="Instrument (0 - 127)" />
-            <Label text="Note (0 - 127)" GridPane.rowIndex="1" />
-            <Label text="Tick" GridPane.rowIndex="2" />
-            <TextField fx:id="instrument" GridPane.columnIndex="1" />
-            <TextField fx:id="note" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <TextField fx:id="tick" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-         </children>
-         <VBox.margin>
-            <Insets />
-         </VBox.margin>
-         <padding>
-            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-         </padding>
-      </GridPane>
-      <TextArea fx:id="orchestraList" editable="false" prefHeight="200.0" prefWidth="200.0" wrapText="true" VBox.vgrow="ALWAYS">
-         <VBox.margin>
-            <Insets bottom="8.0" left="8.0" right="8.0" />
-         </VBox.margin>
-      </TextArea>
-      <GridPane vgap="8.0">
-        <columnConstraints>
-          <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" />
-        </columnConstraints>
-        <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
-         <children>
-            <Button fx:id="play" onAction="#playClicked" defaultButton="true" maxWidth="400.0" mnemonicParsing="false" text="Play" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" />
-            <Button fx:id="loopInstruments" onAction="#loopInstrumentsClicked" maxWidth="400.0" mnemonicParsing="false" text="Loop instruments on current note" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" />
-            <Button fx:id="loopNotes" onAction="#loopNotesClicked" maxWidth="400.0" mnemonicParsing="false" text="Loop notes on current instrument" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" />
-            <Button fx:id="loopAll" onAction="#loopAllClicked" maxWidth="400.0" mnemonicParsing="false" text="Loop all instruments on all notes" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3" />
-            <Button fx:id="loopRandom" onAction="#loopRandomClicked" maxWidth="400.0" mnemonicParsing="false" text="Loop random instruments on random notes 5 times" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" />
-         </children>
-         <VBox.margin>
-            <Insets bottom="8.0" left="8.0" right="8.0" />
-         </VBox.margin>
-      </GridPane>
-      <CheckBox fx:id="wait" mnemonicParsing="false" selected="true" text="Wait for each sound to finish playing">
-         <VBox.margin>
-            <Insets bottom="8.0" left="8.0" right="8.0" />
-         </VBox.margin>
-      </CheckBox>
-   </children>
-</VBox>
+<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.uniqueapps.music.HomeController">
+    <Tab text="Tester">
+        <VBox>
+            <GridPane hgap="8.0" vgap="8.0">
+                <columnConstraints>
+                    <ColumnConstraints halignment="LEFT" hgrow="NEVER" />
+                    <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" minWidth="10.0" prefWidth="100.0" />
+                </columnConstraints>
+                <rowConstraints>
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                </rowConstraints>
+                <VBox.margin>
+                    <Insets />
+                </VBox.margin>
+                <padding>
+                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                </padding>
+                <Label fx:id="instrumentLabel" text="Instrument (0 - 0)" />
+                <Label text="Note (0 - 127)" GridPane.rowIndex="1" />
+                <Label text="Duration (seconds)" GridPane.rowIndex="2" />
+                <TextField fx:id="instrument" GridPane.columnIndex="1" />
+                <TextField fx:id="note" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <TextField fx:id="duration" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            </GridPane>
+            <TextArea fx:id="orchestraList" editable="false" prefHeight="200.0" prefWidth="200.0" wrapText="true" VBox.vgrow="ALWAYS">
+                <VBox.margin>
+                    <Insets bottom="8.0" left="8.0" right="8.0" />
+                </VBox.margin>
+            </TextArea>
+            <GridPane vgap="8.0">
+                <columnConstraints>
+                    <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" />
+                </columnConstraints>
+                <rowConstraints>
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                </rowConstraints>
+                <VBox.margin>
+                    <Insets bottom="8.0" left="8.0" right="8.0" />
+                </VBox.margin>
+                <Button fx:id="play" defaultButton="true" maxWidth="400.0" mnemonicParsing="false" onAction="#playClicked" text="Play" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" />
+                <Button fx:id="loopInstruments" maxWidth="400.0" mnemonicParsing="false" onAction="#loopInstrumentsClicked" text="Loop instruments on current note" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" />
+                <Button fx:id="loopNotes" maxWidth="400.0" mnemonicParsing="false" onAction="#loopNotesClicked" text="Loop notes on current instrument" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" />
+                <Button fx:id="loopAll" maxWidth="400.0" mnemonicParsing="false" onAction="#loopAllClicked" text="Loop all instruments on all notes" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3" />
+                <Button fx:id="loopRandom" maxWidth="400.0" mnemonicParsing="false" onAction="#loopRandomClicked" text="Loop random instruments on random notes 5 times" textAlignment="CENTER" wrapText="true" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" />
+            </GridPane>
+            <CheckBox fx:id="wait" mnemonicParsing="false" selected="true" text="Wait for each sound to finish playing">
+                <VBox.margin>
+                    <Insets bottom="8.0" left="8.0" right="8.0" />
+                </VBox.margin>
+            </CheckBox>
+        </VBox>
+    </Tab>
+    <Tab text="Composer">
+        <VBox>
+            <ToolBar>
+                <Button mnemonicParsing="false" onAction="#playCompositionClicked" text="Play" />
+                <Button mnemonicParsing="false" onAction="#pauseCompositionClicked" text="Pause" />
+                <Button mnemonicParsing="false" onAction="#resetTimelineClicked" text="Reset Timeline" />
+                <Button fx:id="scrollToPlayheadButton" mnemonicParsing="false" onAction="#scrollToPlayheadClicked" text="Enable Scroll to Playhead" />
+                <Separator orientation="VERTICAL" />
+                <Button mnemonicParsing="false" onAction="#changeTempoClicked" text="Change Tempo" />
+                <Button mnemonicParsing="false" onAction="#addStepClicked" text="Add Step" />
+                <Button mnemonicParsing="false" onAction="#removeStepClicked" text="Remove Step" />
+                <Button mnemonicParsing="false" onAction="#addRowClicked" text="Add Row" />
+                <Button mnemonicParsing="false" onAction="#removeRowClicked" text="Remove Row" />
+                <Separator orientation="VERTICAL" />
+                <Button mnemonicParsing="false" onAction="#exportCompositionClicked" text="Export" />
+                <Button mnemonicParsing="false" onAction="#importCompositionClicked" text="Import" />
+                <Button mnemonicParsing="false" onAction="#importMidiClicked" text="Import MIDI" />
+            </ToolBar>
+            <ScrollPane fx:id="superParentScrollPane" fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
+                <StackPane fx:id="parentStackPane" alignment="TOP_LEFT">
+                    <GridPane fx:id="sequencerGrid" />
+                    <Region fx:id="playheadOverlay" maxHeight="Infinity" maxWidth="3" minHeight="0" minWidth="3" mouseTransparent="true" prefWidth="3" style="-fx-background-color: red;" />
+                </StackPane>
+            </ScrollPane>
+        </VBox>
+    </Tab>
+</TabPane>
