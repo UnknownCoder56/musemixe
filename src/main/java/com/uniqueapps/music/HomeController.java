@@ -4,13 +4,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -68,11 +73,9 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
     public Button scrollToPlayheadButton;
 
     @FXML
-    public ScrollPane superParentScrollPane;
+    public VBox noteHeaderColumn;
     @FXML
-    private StackPane parentStackPane;
-    @FXML
-    private GridPane sequencerGrid;
+    private ListView<Step> sequencerGrid;
     @FXML
     private Region playheadOverlay;
 
@@ -88,20 +91,18 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
     AtomicInteger playheadColumn = new AtomicInteger(0);
     private int tempo = 60;
     private boolean scrollToPlayhead = false;
-
-    private final Map<Integer, NoteHeaderCell> noteHeaderCache = new HashMap<>();
-    private final Map<Long, InstrumentCell> instrumentCellCache = new HashMap<>();
-    private int cachedSteps = 0;
-    private int cachedRows = 0;
+    private ScrollBar hBar;
+    private VirtualFlow<ListCell<Step>> virtualFlow;
+    private final ObservableList<Step> steps = FXCollections.observableArrayList();
 
     private static final double STEP_WIDTH = 100.0;
-    private double noteColumnWidth = 0;
     private AnimationTimer playheadAnimator;
     private boolean isPaused = true;
     private double stepDurationNanos;
 
     private record Composition(int version, int tempo, List<Integer> notes, int steps, List<List<Integer>> grid, List<List<Integer>> durations) {}
 
+    @SuppressWarnings("unchecked")
     @FXML
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -122,6 +123,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         orchestraList.setText(sb.toString());
         instrumentLabel.setText("Instrument (0 - " + (MAX_INSTRUMENTS - 1) + " or " + InstrumentCell.DRUM + ")");
 
+        noteHeaderColumn.setStyle("-fx-border-color: gray; -fx-border-width: 1px;");
         sequencerGrid.setStyle("-fx-border-color: gray; -fx-border-width: 1px;");
         StackPane topLeftLabel = new StackPane();
         topLeftLabel.setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
@@ -129,60 +131,76 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         labelRC.setStyle("-fx-text-fill: white");
         topLeftLabel.getChildren().add(labelRC);
         StackPane.setAlignment(topLeftLabel.getChildren().getFirst(), Pos.CENTER);
-        sequencerGrid.add(topLeftLabel, 0, 0);
-        AtomicInteger index = new AtomicInteger(0);
+        noteHeaderColumn.getChildren().addFirst(topLeftLabel);
+        AtomicInteger index = new AtomicInteger(1);
         Arrays.stream(DEFAULT_NOTES).forEach(note -> {
-            NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, note, index.get() + 1, 0);
-            sequencerGrid.add(noteHeaderCell, 0, index.get() + 1);
-            noteHeaderCache.put(index.get() + 1, noteHeaderCell);
-            index.set(index.get() + 1);
+            NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, note, index.get(), 0);
+            VBox.setVgrow(noteHeaderCell, Priority.ALWAYS);
+            noteHeaderColumn.getChildren().add(index.get(), noteHeaderCell);
+            index.getAndIncrement();
         });
-        cachedRows = DEFAULT_NOTES.length;
-        for (int i = 1; i <= 10; i++) {
-            StackPane stackPane = new StackPane();
-            stackPane.setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
-            Label labelC = new Label(String.valueOf(i));
-            labelC.setStyle("-fx-text-fill: white");
-            stackPane.getChildren().add(labelC);
-            StackPane.setAlignment(stackPane.getChildren().getFirst(), Pos.CENTER);
-            sequencerGrid.add(stackPane, i, 0);
-        }
-        cachedSteps = 10;
 
-        ColumnConstraints noteCol = new ColumnConstraints();
-        noteCol.setHgrow(Priority.NEVER);
-        noteCol.setMinWidth(Region.USE_PREF_SIZE);
-        noteCol.setPrefWidth(Region.USE_COMPUTED_SIZE);
-        noteCol.setMaxWidth(Region.USE_COMPUTED_SIZE);
-        sequencerGrid.getColumnConstraints().add(noteCol);
-        for (int c = 1; c <= 10; c++) {
-            ColumnConstraints stepCol = new ColumnConstraints(100);
-            sequencerGrid.getColumnConstraints().add(stepCol);
-        }
-
-        RowConstraints headerRow = new RowConstraints();
-        headerRow.setVgrow(Priority.NEVER);
-        headerRow.setMinHeight(28);
-        headerRow.setPrefHeight(28);
-        headerRow.setMaxHeight(28);
-        sequencerGrid.getRowConstraints().add(headerRow);
-        for (int r = 1; r <= 13; r++) {
-            RowConstraints noteRow = new RowConstraints();
-            noteRow.setVgrow(Priority.ALWAYS);
-            sequencerGrid.getRowConstraints().add(noteRow);
-        }
-
-        for (int r = 1; r <= 13; r++) {
-            for (int c = 1; c <= 10; c++) {
-                InstrumentCell instrumentCell = new InstrumentCell(this, r, c);
-                sequencerGrid.add(instrumentCell, c, r);
-                instrumentCellCache.put(cellKey(r, c), instrumentCell);
+        sequencerGrid.setSelectionModel(null);
+        sequencerGrid.setItems(steps);
+        sequencerGrid.setCellFactory(stepListView -> new ListCell<>() {
+            {
+                setStyle("-fx-padding: 0px");
             }
+            @Override
+            protected void updateItem(Step step, boolean empty) {
+                super.updateItem(step, empty);
+                if (empty || step == null) {
+                    setGraphic(null);
+                    return;
+                }
+                VBox column = new VBox();
+                VBox.setVgrow(column, Priority.ALWAYS);
+                column.setMinWidth(STEP_WIDTH);
+                column.setPrefWidth(STEP_WIDTH);
+                column.setMaxWidth(STEP_WIDTH);
+                column.setSpacing(0);
+                column.setAlignment(Pos.TOP_CENTER);
+                StackPane stackPane = new StackPane();
+                stackPane.setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
+                Label labelC = new Label(String.valueOf(step.getIndex()));
+                labelC.setStyle("-fx-text-fill: white");
+                stackPane.getChildren().add(labelC);
+                StackPane.setAlignment(stackPane.getChildren().getFirst(), Pos.CENTER);
+                column.getChildren().add(stackPane);
+                for (InstrumentCell cell : step.getCells()) {
+                    VBox.setVgrow(cell, Priority.ALWAYS);
+                    column.getChildren().add(cell);
+                }
+                setGraphic(column);
+            }
+        });
+
+        for (int i = 1; i <= 10; i++) {
+            Step step = new Step(i);
+            for (int j = 1; j <= DEFAULT_NOTES.length; j++) {
+                InstrumentCell instrumentCell = new InstrumentCell(this, j, i);
+                step.getCells().add(instrumentCell);
+            }
+            steps.add(step);
         }
 
         playheadOverlay.prefHeightProperty().bind(sequencerGrid.heightProperty());
         playheadOverlay.setVisible(false);
         createTimeline();
+
+        Platform.runLater(() -> {
+            for (Node node : sequencerGrid.lookupAll(".scroll-bar")) {
+                if (node instanceof ScrollBar scrollBar && scrollBar.getOrientation() == Orientation.HORIZONTAL) {
+                    hBar = scrollBar;
+                    break;
+                }
+            }
+            virtualFlow = (VirtualFlow<ListCell<Step>>) sequencerGrid.lookup(".virtual-flow");
+            noteHeaderColumn.paddingProperty().bind(Bindings.createObjectBinding(() -> {
+                double bottomPadding = hBar.isVisible() ? hBar.getHeight() + 1 : 0;
+                return new Insets(0, 0, bottomPadding, 0);
+            }, hBar.visibleProperty(), hBar.heightProperty()));
+        });
     }
 
     @FXML
@@ -302,11 +320,11 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
 
     @FXML
     private void resetTimelineClicked() {
-        for (int i = 1; i <= cachedRows; i++) {
-            NoteHeaderCell noteHeaderCell = noteHeaderCache.get(i);
+        for (int i = 1; i < noteHeaderColumn.getChildren().size(); i++) {
+            NoteHeaderCell noteHeaderCell = (NoteHeaderCell) noteHeaderColumn.getChildren().get(i);
             if (noteHeaderCell == null) continue;
-            for (int s = 1; s <= cachedSteps; s++) {
-                InstrumentCell cell = instrumentCellCache.get(cellKey(i, s));
+            for (Step step : steps) {
+                InstrumentCell cell = step.getCells().get(i - 1);
                 if (cell != null) {
                     int instr = cell.getInstrument();
                     if (instr != InstrumentCell.INACTIVE) {
@@ -365,69 +383,46 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
 
     @FXML
     public void addStepClicked() {
-        int newStep = cachedSteps + 1;
-        StackPane stackPane = new StackPane();
-        stackPane.setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
-        Label labelC = new Label(String.valueOf(newStep));
-        labelC.setStyle("-fx-text-fill: white");
-        stackPane.getChildren().add(labelC);
-        StackPane.setAlignment(stackPane.getChildren().getFirst(), Pos.CENTER);
-        sequencerGrid.add(stackPane, newStep, 0);
-        ColumnConstraints stepCol = new ColumnConstraints(100);
-        sequencerGrid.getColumnConstraints().add(stepCol);
-        for (int r = 1; r <= cachedRows; r++) {
-            InstrumentCell instrumentCell = new InstrumentCell(this, r, newStep);
-            sequencerGrid.add(instrumentCell, newStep, r);
-            instrumentCellCache.put(cellKey(r, newStep), instrumentCell);
+        int newStep = steps.size() + 1;
+        Step step = new Step(newStep);
+        for (int i = 1; i < noteHeaderColumn.getChildren().size(); i++) {
+            InstrumentCell instrumentCell = new InstrumentCell(this, i, newStep);
+            step.getCells().add(instrumentCell);
         }
-        cachedSteps = newStep;
+        steps.add(step);
     }
 
     @FXML
     public void removeStepClicked() {
-        if (cachedSteps > 1) {
-            sequencerGrid.getChildren().removeIf(node -> {
-                Integer colIndex = GridPane.getColumnIndex(node);
-                return colIndex != null && colIndex == cachedSteps;
-            });
-            sequencerGrid.getColumnConstraints().remove(cachedSteps);
-            for (int r = 1; r <= cachedRows; r++) {
-                instrumentCellCache.remove(cellKey(r, cachedSteps));
-            }
-            cachedSteps--;
+        if (steps.size() > 1) {
+            steps.removeIf(step -> step.getIndex() == steps.size());
         }
     }
 
     @FXML
     public void addRowClicked() {
-        int newRow = cachedRows + 1;
+        int newRow = noteHeaderColumn.getChildren().size();
         NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, DEFAULT_NOTES[(newRow - 1) % DEFAULT_NOTES.length], newRow, 0);
-        sequencerGrid.add(noteHeaderCell, 0, newRow);
-        noteHeaderCache.put(newRow, noteHeaderCell);
-        RowConstraints noteRow = new RowConstraints();
-        noteRow.setVgrow(Priority.ALWAYS);
-        sequencerGrid.getRowConstraints().add(noteRow);
-        for (int c = 1; c <= cachedSteps; c++) {
-            InstrumentCell instrumentCell = new InstrumentCell(this, newRow, c);
-            sequencerGrid.add(instrumentCell, c, newRow);
-            instrumentCellCache.put(cellKey(newRow, c), instrumentCell);
+        VBox.setVgrow(noteHeaderCell, Priority.ALWAYS);
+        noteHeaderColumn.getChildren().add(newRow, noteHeaderCell);
+        for (int i = 0; i < steps.size(); i++) {
+            InstrumentCell instrumentCell = new InstrumentCell(this, newRow, i + 1);
+            steps.get(i).getCells().add(instrumentCell);
         }
-        cachedRows = newRow;
+        sequencerGrid.refresh();
     }
 
     @FXML
     public void removeRowClicked() {
-        if (cachedRows > 1) {
-            sequencerGrid.getChildren().removeIf(node -> {
-                Integer rowIndex = GridPane.getRowIndex(node);
-                return rowIndex != null && rowIndex == cachedRows;
+        if (noteHeaderColumn.getChildren().size() > 2) {
+            noteHeaderColumn.getChildren().removeIf(node -> {
+                if (!(node instanceof NoteHeaderCell noteHeaderCell)) return false;
+                return noteHeaderCell.getRow() == noteHeaderColumn.getChildren().size() - 1;
             });
-            sequencerGrid.getRowConstraints().remove(cachedRows);
-            noteHeaderCache.remove(cachedRows);
-            for (int c = 1; c <= cachedSteps; c++) {
-                instrumentCellCache.remove(cellKey(cachedRows, c));
+            for (int i = 1; i <= steps.size(); i++) {
+                steps.get(i - 1).getCells().removeLast();
             }
-            cachedRows--;
+            sequencerGrid.refresh();
         }
     }
 
@@ -455,18 +450,28 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         lockControls(lock);
     }
 
-    private void updateNoteColumnWidth() {
-        sequencerGrid.getChildren().stream()
-                .filter(n -> GridPane.getColumnIndex(n) != null && GridPane.getColumnIndex(n) == 0)
-                .findFirst().ifPresent(noteHeader -> noteColumnWidth = noteHeader.getBoundsInParent().getWidth());
-    }
-
-    private double getPlayheadX(double step) {
-        return noteColumnWidth + (step - 1) * STEP_WIDTH;
+    private double getPlayheadX(double currentStepDouble, int stepIndex) {
+        if (virtualFlow == null) return -1;
+        Step firstVisibleStep = virtualFlow.getFirstVisibleCell().getItem();
+        Step lastVisibleStep = virtualFlow.getLastVisibleCell().getItem();
+        // Let "0 to 1 index" or 1 to 2 step be the last step (according to currentStepDouble hack-inflate logic)
+        if (stepIndex == 0) stepIndex = steps.size();
+        // This logic stays at-par, had -1 for visibleStep index before to match 0-based LHS, now 1-based both sides
+        if (stepIndex < firstVisibleStep.getIndex() || stepIndex > lastVisibleStep.getIndex()) {
+            return -1;
+        }
+        if (scrollToPlayhead && hBar.getValue() != 1.0 && hBar.isVisible()) {
+            return 0;
+        }
+        // According to hack-inflate, when step 1 to 2, instead treat as last step traversal, so add steps.size()
+        if (currentStepDouble < 2) {
+            return (steps.size() + (currentStepDouble - 1 - 1) - (firstVisibleStep.getIndex() - 1)) * STEP_WIDTH;
+        }
+        // According to hack-inflate, for all rest, first -1 is to come to 0 based index, second -1 is to align to actual playback
+        return ((currentStepDouble - 1 - 1) - (firstVisibleStep.getIndex() - 1)) * STEP_WIDTH;
     }
 
     private void startPlayhead() {
-        updateNoteColumnWidth();
         playheadOverlay.setVisible(true);
         stepDurationNanos = (60.0 / tempo / 4) * 1_000_000_000;
         long playheadStartTime = System.nanoTime();
@@ -480,19 +485,28 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
 
             @Override
             public void handle(long now) {
-                double currentStepFloat;
-                    int col = playheadColumn.get();
-                    if (col != lastCol) {
-                        stepStartTime = now;
-                        lastCol = col;
-                    }
-                    long elapsed = now - stepStartTime;
-                    double fraction = Math.min(elapsed / stepDurationNanos, 1.0);
-                    currentStepFloat = col + 1 + fraction;
-                    if (currentStepFloat > cachedSteps + 1) currentStepFloat -= cachedSteps;
-                playheadOverlay.setTranslateX(getPlayheadX(currentStepFloat));
+                double currentStepDouble;
+                int col = playheadColumn.get();
+                if (col != lastCol) {
+                    stepStartTime = now;
+                    lastCol = col;
+                }
+                long elapsed = now - stepStartTime;
+                double fraction = Math.min(elapsed / stepDurationNanos, 1.0);
+                currentStepDouble = col + 1 + fraction;
+                if (currentStepDouble > steps.size() + 1) currentStepDouble -= steps.size();
+                double toSetX = getPlayheadX(currentStepDouble, col);
+                playheadOverlay.setVisible(toSetX != -1);
+                playheadOverlay.setTranslateX(toSetX);
                 if (scrollToPlayhead) {
-                    superParentScrollPane.setHvalue(getPlayheadX(currentStepFloat) / (sequencerGrid.getWidth() - superParentScrollPane.getViewportBounds().getWidth()));
+                    if (hBar == null) return;
+                    // According to hack-inflate, when step 1 to 2, instead treat as last step traversal, so add steps.size()
+                    if (currentStepDouble < 2) {
+                        hBar.setValue(Math.clamp(((steps.size() + (currentStepDouble - 1 - 1)) * STEP_WIDTH) / (steps.size() * STEP_WIDTH - sequencerGrid.getWidth()), 0.0, 1.0));
+                        return;
+                    }
+                    // According to hack-inflate, for all rest, first -1 is to come to 0 based index, second -1 is to align to actual playback
+                    hBar.setValue(Math.clamp(((currentStepDouble - 1 - 1) * STEP_WIDTH) / (steps.size() * STEP_WIDTH - sequencerGrid.getWidth()), 0.0, 1.0));
                 }
             }
         };
@@ -534,16 +548,16 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
 
             int currentStep = playheadColumn.get() + 1;
 
-            for (int i = 1; i <= cachedRows; i++) {
-                NoteHeaderCell noteHeaderCell = noteHeaderCache.get(i);
+            for (int i = 1; i < noteHeaderColumn.getChildren().size(); i++) {
+                NoteHeaderCell noteHeaderCell = (NoteHeaderCell) noteHeaderColumn.getChildren().get(i);
                 if (noteHeaderCell == null) continue;
-                for (int s = 1; s <= cachedSteps; s++) {
-                    InstrumentCell cell = instrumentCellCache.get(cellKey(i, s));
+                for (int s = 1; s <= steps.size(); s++) {
+                    InstrumentCell cell = steps.get(s - 1).getCells().get(i - 1);
                     if (cell != null) {
                         int instr = cell.getInstrument();
                         if (instr != InstrumentCell.INACTIVE) {
                             int dur = cell.getDuration();
-                            int endStep = ((s - 1 + dur) % cachedSteps) + 1;
+                            int endStep = ((s - 1 + dur) % steps.size()) + 1;
                             if (endStep == currentStep) {
                                 Player.playNoteOff(instr, noteHeaderCell.getNote());
                             }
@@ -552,10 +566,10 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                 }
             }
 
-            for (int i = 1; i <= cachedRows; i++) {
-                NoteHeaderCell noteHeaderCell = noteHeaderCache.get(i);
+            for (int i = 1; i < noteHeaderColumn.getChildren().size(); i++) {
+                NoteHeaderCell noteHeaderCell = (NoteHeaderCell) noteHeaderColumn.getChildren().get(i);
                 if (noteHeaderCell == null) continue;
-                InstrumentCell currentCell = instrumentCellCache.get(cellKey(i, currentStep));
+                InstrumentCell currentCell = steps.get(currentStep - 1).getCells().get(i - 1);
                 if (currentCell != null) {
                     int instr = currentCell.getInstrument();
                     if (instr != InstrumentCell.INACTIVE) {
@@ -565,7 +579,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
             }
 
             playheadColumn.set(playheadColumn.get() + 1);
-            if (playheadColumn.get() >= cachedSteps) {
+            if (playheadColumn.get() >= steps.size()) {
                 playheadColumn.set(0);
             }
         }, 0, periodNanos, TimeUnit.NANOSECONDS);
@@ -582,24 +596,24 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         if (file != null) {
             try {
                 List<Integer> notes = new ArrayList<>();
-                for (int r = 1; r <= cachedRows; r++) {
-                    NoteHeaderCell cell = noteHeaderCache.get(r);
+                for (int r = 1; r < noteHeaderColumn.getChildren().size(); r++) {
+                    NoteHeaderCell cell = (NoteHeaderCell) noteHeaderColumn.getChildren().get(r);
                     if (cell != null) notes.add(cell.getNote());
                 }
                 List<List<Integer>> grid = new ArrayList<>();
                 List<List<Integer>> durations = new ArrayList<>();
-                for (int r = 1; r <= cachedRows; r++) {
+                for (int r = 1; r < noteHeaderColumn.getChildren().size(); r++) {
                     List<Integer> row = new ArrayList<>();
                     List<Integer> durRow = new ArrayList<>();
-                    for (int c = 1; c <= cachedSteps; c++) {
-                        InstrumentCell cell = instrumentCellCache.get(cellKey(r, c));
+                    for (int c = 1; c <= steps.size(); c++) {
+                        InstrumentCell cell = steps.get(c - 1).getCells().get(r - 1);
                         row.add(cell != null ? cell.getInstrument() : InstrumentCell.INACTIVE);
                         durRow.add(cell != null ? cell.getDuration() : 1);
                     }
                     grid.add(row);
                     durations.add(durRow);
                 }
-                Composition composition = new Composition(2, tempo, notes, cachedSteps, grid, durations);
+                Composition composition = new Composition(2, tempo, notes, steps.size(), grid, durations);
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 Files.writeString(file.toPath(), gson.toJson(composition));
                 new Alert(Alert.AlertType.INFORMATION, "Composition exported successfully!").showAndWait();
@@ -629,25 +643,12 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                 for (int i = 0; i < composition.notes().size(); i++) {
                     int noteValue = composition.notes().get(i);
                     NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, noteValue, i + 1, 0);
-                    sequencerGrid.add(noteHeaderCell, 0, i + 1);
-                    noteHeaderCache.put(i + 1, noteHeaderCell);
-                    RowConstraints noteRow = new RowConstraints();
-                    noteRow.setVgrow(Priority.ALWAYS);
-                    sequencerGrid.getRowConstraints().add(noteRow);
+                    noteHeaderCell.getChildren().add(i + 1, noteHeaderCell);
                 }
-                cachedRows = composition.notes().size();
                 for (int c = 1; c <= composition.steps(); c++) {
-                    StackPane stackPane = new StackPane();
-                    stackPane.setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
-                    Label labelC = new Label(String.valueOf(c));
-                    labelC.setStyle("-fx-text-fill: white");
-                    stackPane.getChildren().add(labelC);
-                    StackPane.setAlignment(stackPane.getChildren().getFirst(), Pos.CENTER);
-                    sequencerGrid.add(stackPane, c, 0);
-                    ColumnConstraints stepCol = new ColumnConstraints(100);
-                    sequencerGrid.getColumnConstraints().add(stepCol);
+                    Step step = new Step(c);
+                    steps.add(step);
                 }
-                cachedSteps = composition.steps();
                 boolean hasDurations = composition.version() == 2 && composition.durations() != null;
                 for (int r = 0; r < composition.grid().size(); r++) {
                     List<Integer> row = composition.grid().get(r);
@@ -659,11 +660,11 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                         if (instr != InstrumentCell.INACTIVE) {
                             instrumentCell.setInstrumentAndDuration(instr, dur, orchestra);
                         }
-                        sequencerGrid.add(instrumentCell, c + 1, r + 1);
-                        instrumentCellCache.put(cellKey(r + 1, c + 1), instrumentCell);
+                        steps.get(c).getCells().add(instrumentCell);
                     }
                 }
                 createTimeline();
+                sequencerGrid.refresh();
                 new Alert(Alert.AlertType.INFORMATION, "Composition imported successfully!").showAndWait();
             } catch (Exception e) {
                 new Alert(Alert.AlertType.ERROR, "Failed to import: " + e.getMessage()).showAndWait();
@@ -776,7 +777,6 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                 }
                 CountDownLatch clearLatch = new CountDownLatch(1);
                 Platform.runLater(() -> {
-                    parentStackPane.getChildren().remove(sequencerGrid);
                     clearGrid();
                     clearLatch.countDown();
                 });
@@ -786,27 +786,20 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     int noteValue = notes.get(i);
                     NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, noteValue, i + 1, 0);
                     int finalI = i;
-                    Platform.runLater(() -> sequencerGrid.add(noteHeaderCell, 0, finalI + 1));
-                    noteHeaderCache.put(i + 1, noteHeaderCell);
-                    RowConstraints noteRow = new RowConstraints();
-                    noteRow.setVgrow(Priority.ALWAYS);
-                    Platform.runLater(() -> sequencerGrid.getRowConstraints().add(noteRow));
+                    Platform.runLater(() -> {
+                        VBox.setVgrow(noteHeaderCell, Priority.ALWAYS);
+                        noteHeaderColumn.getChildren().add(finalI + 1, noteHeaderCell);
+                    });
                 }
-                cachedRows = notes.size();
                 for (int c = 1; c <= totalSteps; c++) {
-                    StackPane stackPane = new StackPane();
-                    stackPane.setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
-                    Label labelC = new Label(String.valueOf(c));
-                    labelC.setStyle("-fx-text-fill: white");
-                    stackPane.getChildren().add(labelC);
-                    StackPane.setAlignment(stackPane.getChildren().getFirst(), Pos.CENTER);
-                    int finalC = c;
-                    Platform.runLater(() -> sequencerGrid.add(stackPane, finalC, 0));
-                    ColumnConstraints stepCol = new ColumnConstraints(100);
-                    Platform.runLater(() -> sequencerGrid.getColumnConstraints().add(stepCol));
+                    Step step = new Step(c);
+                    CountDownLatch stepLatch = new CountDownLatch(1);
+                    Platform.runLater(() -> {
+                        steps.add(step);
+                        stepLatch.countDown();
+                    });
+                    stepLatch.await();
                 }
-                cachedSteps = totalSteps;
-                List<InstrumentCell> cellsToAdd = new ArrayList<>();
                 for (int r = 0; r < grid.size(); r++) {
                     List<Integer> row = grid.get(r);
                     List<Integer> durRow = durations.get(r);
@@ -817,36 +810,17 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                         if (instr != InstrumentCell.INACTIVE) {
                             instrumentCell.setInstrumentAndDuration(instr, dur, orchestra);
                         }
-                        cellsToAdd.add(instrumentCell);
-                        GridPane.setConstraints(instrumentCell, c + 1, r + 1);
-                        instrumentCellCache.put(cellKey(r + 1, c + 1), instrumentCell);
+                        steps.get(c).getCells().add(instrumentCell);
                     }
                 }
-                sequencerGrid.getChildren().addAll(cellsToAdd);
                 createTimeline();
-                Platform.runLater(() -> {
-                    try {
-                        parentStackPane.getChildren().addFirst(sequencerGrid);
-                        sequencerGrid.applyCss();
-                        sequencerGrid.layout();
-                        Platform.runLater(() -> {
-                            waitDialogWindow.hide();
-                            new Alert(Alert.AlertType.INFORMATION, "MIDI imported: " + notes.size() + " notes, " + totalSteps + " steps, " + bpm + " BPM").showAndWait();
-                        });
-                    } catch (OutOfMemoryError oom) {
-                        System.gc();
-                        parentStackPane.getChildren().remove(sequencerGrid);
-                        Platform.runLater(() -> {
-                            waitDialogWindow.hide();
-                            new Alert(Alert.AlertType.INFORMATION, "MIDI imported: " + notes.size() + " notes, " + totalSteps + " steps, " + bpm + " BPM\nComposer UI disabled due to extremely large size").showAndWait();
-                        });
-                    }
-                });
+                Platform.runLater(() -> Platform.runLater(() -> {
+                    sequencerGrid.refresh();
+                    waitDialogWindow.hide();
+                    new Alert(Alert.AlertType.INFORMATION, "MIDI imported: " + notes.size() + " notes, " + totalSteps + " steps, " + bpm + " BPM").showAndWait();
+                }));
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    if (parentStackPane.getChildren().getFirst() != sequencerGrid) {
-                        parentStackPane.getChildren().addFirst(sequencerGrid);
-                    }
                     waitDialogWindow.hide();
                     new Alert(Alert.AlertType.ERROR, "Failed to import MIDI: " + e.getMessage()).showAndWait();
                 });
@@ -855,26 +829,8 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
     }
 
     private void clearGrid() {
-        sequencerGrid.getChildren().removeIf(node -> node instanceof InstrumentCell || node instanceof NoteHeaderCell);
-        sequencerGrid.getChildren().removeIf(node -> {
-            Integer col = GridPane.getColumnIndex(node);
-            Integer row = GridPane.getRowIndex(node);
-            return (col != null && col > 0 && row != null && row == 0);
-        });
-        while (sequencerGrid.getRowConstraints().size() > 1) {
-            sequencerGrid.getRowConstraints().removeLast();
-        }
-        while (sequencerGrid.getColumnConstraints().size() > 1) {
-            sequencerGrid.getColumnConstraints().removeLast();
-        }
-        noteHeaderCache.clear();
-        instrumentCellCache.clear();
-        cachedSteps = 0;
-        cachedRows = 0;
-    }
-
-    private long cellKey(int row, int col) {
-        return ((long) row << 16) | col;
+        steps.clear();
+        noteHeaderColumn.getChildren().removeIf(node -> node instanceof NoteHeaderCell);
     }
 
     public void shutdownScheduler() {
@@ -951,10 +907,3 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         }
     }
 }
-
-
-
-
-
-
-

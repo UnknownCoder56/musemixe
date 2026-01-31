@@ -80,11 +80,14 @@
                 <Button mnemonicParsing="false" onAction="#importCompositionClicked" text="Import" />
                 <Button mnemonicParsing="false" onAction="#importMidiClicked" text="Import MIDI" />
             </ToolBar>
-            <ScrollPane fx:id="superParentScrollPane" fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
-                <StackPane fx:id="parentStackPane" alignment="TOP_LEFT">
-                    <GridPane fx:id="sequencerGrid" />
-                    <Region fx:id="playheadOverlay" maxHeight="Infinity" maxWidth="3" minHeight="0" minWidth="3" mouseTransparent="true" prefWidth="3" style="-fx-background-color: red;" />
-                </StackPane>
+            <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS" hbarPolicy="NEVER">
+                <HBox VBox.vgrow="ALWAYS">
+                    <VBox VBox.vgrow="ALWAYS" fx:id="noteHeaderColumn" prefWidth="120" style="-fx-border-color: gray; -fx-border-width: 1px;" />
+                    <StackPane VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" maxWidth="Infinity" alignment="TOP_LEFT">
+                        <ListView fx:id="sequencerGrid" orientation="HORIZONTAL" cache="true" cacheHint="SPEED" focusTraversable="false" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                        <Region fx:id="playheadOverlay" maxHeight="Infinity" maxWidth="3" minHeight="0" minWidth="3" mouseTransparent="true" prefWidth="3" style="-fx-background-color: red;" />
+                    </StackPane>
+                </HBox>
             </ScrollPane>
         </VBox>
     </Tab>
