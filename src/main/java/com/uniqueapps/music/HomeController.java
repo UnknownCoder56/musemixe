@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
+import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -93,7 +94,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
     private boolean scrollToPlayhead = false;
     private ScrollBar hBar;
     private VirtualFlow<ListCell<Step>> virtualFlow;
-    private final ObservableList<Step> steps = FXCollections.observableArrayList();
+    private final ObservableList<Step> steps = FXCollections.observableArrayList(step -> new Observable[]{step.cellsProperty()});
 
     private static final double STEP_WIDTH = 100.0;
     private AnimationTimer playheadAnimator;
@@ -409,7 +410,6 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
             InstrumentCell instrumentCell = new InstrumentCell(this, newRow, i + 1);
             steps.get(i).getCells().add(instrumentCell);
         }
-        sequencerGrid.refresh();
     }
 
     @FXML
@@ -422,7 +422,6 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
             for (int i = 1; i <= steps.size(); i++) {
                 steps.get(i - 1).getCells().removeLast();
             }
-            sequencerGrid.refresh();
         }
     }
 
@@ -664,7 +663,6 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     }
                 }
                 createTimeline();
-                sequencerGrid.refresh();
                 new Alert(Alert.AlertType.INFORMATION, "Composition imported successfully!").showAndWait();
             } catch (Exception e) {
                 new Alert(Alert.AlertType.ERROR, "Failed to import: " + e.getMessage()).showAndWait();
@@ -810,12 +808,17 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                         if (instr != InstrumentCell.INACTIVE) {
                             instrumentCell.setInstrumentAndDuration(instr, dur, orchestra);
                         }
-                        steps.get(c).getCells().add(instrumentCell);
+                        int finalC = c;
+                        CountDownLatch finalStepLatch = new CountDownLatch(1);
+                        Platform.runLater(() -> {
+                            steps.get(finalC).getCells().add(instrumentCell);
+                            finalStepLatch.countDown();
+                        });
+                        finalStepLatch.await();
                     }
                 }
                 createTimeline();
                 Platform.runLater(() -> Platform.runLater(() -> {
-                    sequencerGrid.refresh();
                     waitDialogWindow.hide();
                     new Alert(Alert.AlertType.INFORMATION, "MIDI imported: " + notes.size() + " notes, " + totalSteps + " steps, " + bpm + " BPM").showAndWait();
                 }));
