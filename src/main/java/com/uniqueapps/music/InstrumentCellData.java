@@ -1,38 +1,23 @@
 package com.uniqueapps.music;
 
-import javafx.event.EventHandler;
-import javafx.geometry.Pos;
-import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 
 import javax.sound.midi.Instrument;
 
-public class InstrumentCell extends Label {
+public class InstrumentCellData {
 
     public static final int INACTIVE = -1;
     public static final int DRUM = 1000;
-    private int instrument;
+    private int instrument = INACTIVE;
     private int duration = 1;
     private final int row;
     private final int column;
+    private final StringProperty labelProperty = new SimpleStringProperty("");
 
-    public InstrumentCell(EventHandler<MouseEvent> mouseHandler, int row, int column) {
-        setStyle("-fx-text-fill: white; -fx-padding: 3px; -fx-border-color: gray; -fx-border-width: 1px;");
-        setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        VBox.setVgrow(this, Priority.ALWAYS);
-        HBox.setHgrow(this, Priority.ALWAYS);
-        setFont(Font.font(getFont().getFamily(), FontWeight.BOLD, getFont().getSize() + 2));
-        setAlignment(Pos.CENTER);
-        setTextAlignment(TextAlignment.CENTER);
-        setOnMouseClicked(mouseHandler);
-
+    public InstrumentCellData(int row, int column) {
         this.row = row;
         this.column = column;
-        this.instrument = INACTIVE;
     }
 
     public int getInstrument() {
@@ -61,10 +46,10 @@ public class InstrumentCell extends Label {
 
     private void updateLabel(Instrument[] orchestra) {
         if (instrument == INACTIVE) {
-            setText("");
+            labelProperty.set("");
         } else {
             String name = (instrument == DRUM) ? "Drum Kit" : orchestra[instrument].getName().trim();
-            setText(duration > 1 ? name + " (" + duration + ")" : name);
+            labelProperty.set(duration > 1 ? name + " (" + duration + ")" : name);
         }
     }
 
@@ -74,5 +59,9 @@ public class InstrumentCell extends Label {
 
     public int getColumn() {
         return column;
+    }
+
+    public StringProperty labelProperty() {
+        return labelProperty;
     }
 }

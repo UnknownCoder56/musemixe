@@ -20,6 +20,8 @@ import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
@@ -114,7 +116,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
             synthesizer.open();
             orchestra = synthesizer.getLoadedInstruments();
             MAX_INSTRUMENTS = orchestra.length;
-            sb.append("\n").append(InstrumentCell.DRUM).append(") ").append("Drum Kit");
+            sb.append("\n").append(InstrumentCellData.DRUM).append(") ").append("Drum Kit");
             for (int i = 0; i < MAX_INSTRUMENTS; i++) {
                 sb.append("\n").append(i).append(") ").append(orchestra[i].getName().trim());
             }
@@ -123,7 +125,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
             System.exit(1);
         }
         orchestraList.setText(sb.toString());
-        instrumentLabel.setText("Instrument (0 - " + (MAX_INSTRUMENTS - 1) + " or " + InstrumentCell.DRUM + ")");
+        instrumentLabel.setText("Instrument (0 - " + (MAX_INSTRUMENTS - 1) + " or " + InstrumentCellData.DRUM + ")");
 
         noteHeaderColumn.setStyle("-fx-border-color: gray; -fx-border-width: 1px;");
         sequencerGrid.setStyle("-fx-border-color: gray; -fx-border-width: 1px;");
@@ -144,8 +146,24 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         sequencerGrid.setSelectionModel(null);
         sequencerGrid.setItems(steps);
         sequencerGrid.setCellFactory(stepListView -> new ListCell<>() {
+            private final VBox column = new VBox();
+            private final Label stepLabel = new Label();
             {
                 setStyle("-fx-padding: 0px");
+
+                VBox.setVgrow(column, Priority.ALWAYS);
+                column.setMinWidth(STEP_WIDTH);
+                column.setPrefWidth(STEP_WIDTH);
+                column.setMaxWidth(STEP_WIDTH);
+                column.setSpacing(0);
+                column.setAlignment(Pos.TOP_CENTER);
+
+                stepLabel.setStyle("-fx-text-fill: white; -fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
+                stepLabel.setMaxWidth(Double.MAX_VALUE);
+                HBox.setHgrow(stepLabel, Priority.ALWAYS);
+                stepLabel.setAlignment(Pos.CENTER);
+                stepLabel.setTextAlignment(TextAlignment.CENTER);
+                column.getChildren().add(stepLabel);
             }
             @Override
             protected void updateItem(Step step, boolean empty) {
@@ -154,30 +172,45 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     setGraphic(null);
                     return;
                 }
-                VBox column = new VBox();
-                VBox.setVgrow(column, Priority.ALWAYS);
-                column.setMinWidth(STEP_WIDTH);
-                column.setPrefWidth(STEP_WIDTH);
-                column.setMaxWidth(STEP_WIDTH);
-                column.setSpacing(0);
-                column.setAlignment(Pos.TOP_CENTER);
-                Label labelC = new Label(String.valueOf(step.getIndex()));
-                labelC.setStyle("-fx-text-fill: white; -fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
-                labelC.setMaxWidth(Double.MAX_VALUE);
-                HBox.setHgrow(labelC, Priority.ALWAYS);
-                labelC.setAlignment(Pos.CENTER);
-                labelC.setTextAlignment(TextAlignment.CENTER);
-                column.getChildren().add(labelC);
-                column.getChildren().addAll(step.getCells());
+                stepLabel.setText(Integer.toString(step.getIndex()));
+                if (column.getChildren().size() - 1 > step.getCells().size()) {
+                    while (column.getChildren().size() - 1 > step.getCells().size()) {
+                        column.getChildren().remove(1);
+                    }
+                } else if (column.getChildren().size() - 1 < step.getCells().size()) {
+                    while (column.getChildren().size() - 1 < step.getCells().size()) {
+                        Label cellLabel = createCellLabel();
+                        column.getChildren().add(cellLabel);
+                    }
+                }
+                for (int i = 0; i < step.getCells().size(); i++) {
+                    InstrumentCellData cellData = step.getCells().get(i);
+                    Label cellLabel = (Label) column.getChildren().get(i + 1);
+                    cellLabel.textProperty().unbind();
+                    cellLabel.textProperty().bind(cellData.labelProperty());
+                    cellLabel.setUserData(cellData);
+                }
                 setGraphic(column);
+            }
+            private Label createCellLabel() {
+                Label cellLabel = new Label();
+                cellLabel.setStyle("-fx-text-fill: white; -fx-padding: 3px; -fx-border-color: gray; -fx-border-width: 1px;");
+                cellLabel.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+                VBox.setVgrow(cellLabel, Priority.ALWAYS);
+                HBox.setHgrow(cellLabel, Priority.ALWAYS);
+                cellLabel.setFont(Font.font(cellLabel.getFont().getFamily(), FontWeight.BOLD, cellLabel.getFont().getSize() + 2));
+                cellLabel.setAlignment(Pos.CENTER);
+                cellLabel.setTextAlignment(TextAlignment.CENTER);
+                cellLabel.setOnMouseClicked(HomeController.this);
+                return cellLabel;
             }
         });
 
         for (int i = 1; i <= 10; i++) {
             Step step = new Step(i);
             for (int j = 1; j <= DEFAULT_NOTES.length; j++) {
-                InstrumentCell instrumentCell = new InstrumentCell(this, j, i);
-                step.getCells().add(instrumentCell);
+                InstrumentCellData instrumentCellData = new InstrumentCellData(j, i);
+                step.getCells().add(instrumentCellData);
             }
             steps.add(step);
         }
@@ -322,10 +355,10 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
             NoteHeaderCell noteHeaderCell = (NoteHeaderCell) noteHeaderColumn.getChildren().get(i);
             if (noteHeaderCell == null) continue;
             for (Step step : steps) {
-                InstrumentCell cell = step.getCells().get(i - 1);
+                InstrumentCellData cell = step.getCells().get(i - 1);
                 if (cell != null) {
                     int instr = cell.getInstrument();
-                    if (instr != InstrumentCell.INACTIVE) {
+                    if (instr != InstrumentCellData.INACTIVE) {
                         Player.playNoteOff(instr, noteHeaderCell.getNote());
                     }
                 }
@@ -384,8 +417,8 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         int newStep = steps.size() + 1;
         Step step = new Step(newStep);
         for (int i = 1; i < noteHeaderColumn.getChildren().size(); i++) {
-            InstrumentCell instrumentCell = new InstrumentCell(this, i, newStep);
-            step.getCells().add(instrumentCell);
+            InstrumentCellData instrumentCellData = new InstrumentCellData(i, newStep);
+            step.getCells().add(instrumentCellData);
         }
         steps.add(step);
     }
@@ -403,8 +436,8 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, DEFAULT_NOTES[(newRow - 1) % DEFAULT_NOTES.length], newRow, 0);
         noteHeaderColumn.getChildren().add(newRow, noteHeaderCell);
         for (int i = 0; i < steps.size(); i++) {
-            InstrumentCell instrumentCell = new InstrumentCell(this, newRow, i + 1);
-            steps.get(i).getCells().add(instrumentCell);
+            InstrumentCellData instrumentCellData = new InstrumentCellData(newRow, i + 1);
+            steps.get(i).getCells().add(instrumentCellData);
         }
     }
 
@@ -547,10 +580,10 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                 NoteHeaderCell noteHeaderCell = (NoteHeaderCell) noteHeaderColumn.getChildren().get(i);
                 if (noteHeaderCell == null) continue;
                 for (int s = 1; s <= steps.size(); s++) {
-                    InstrumentCell cell = steps.get(s - 1).getCells().get(i - 1);
+                    InstrumentCellData cell = steps.get(s - 1).getCells().get(i - 1);
                     if (cell != null) {
                         int instr = cell.getInstrument();
-                        if (instr != InstrumentCell.INACTIVE) {
+                        if (instr != InstrumentCellData.INACTIVE) {
                             int dur = cell.getDuration();
                             int endStep = ((s - 1 + dur) % steps.size()) + 1;
                             if (endStep == currentStep) {
@@ -564,10 +597,10 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
             for (int i = 1; i < noteHeaderColumn.getChildren().size(); i++) {
                 NoteHeaderCell noteHeaderCell = (NoteHeaderCell) noteHeaderColumn.getChildren().get(i);
                 if (noteHeaderCell == null) continue;
-                InstrumentCell currentCell = steps.get(currentStep - 1).getCells().get(i - 1);
+                InstrumentCellData currentCell = steps.get(currentStep - 1).getCells().get(i - 1);
                 if (currentCell != null) {
                     int instr = currentCell.getInstrument();
-                    if (instr != InstrumentCell.INACTIVE) {
+                    if (instr != InstrumentCellData.INACTIVE) {
                         Player.playNoteOn(instr, noteHeaderCell.getNote());
                     }
                 }
@@ -601,8 +634,8 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     List<Integer> row = new ArrayList<>();
                     List<Integer> durRow = new ArrayList<>();
                     for (int c = 1; c <= steps.size(); c++) {
-                        InstrumentCell cell = steps.get(c - 1).getCells().get(r - 1);
-                        row.add(cell != null ? cell.getInstrument() : InstrumentCell.INACTIVE);
+                        InstrumentCellData cell = steps.get(c - 1).getCells().get(r - 1);
+                        row.add(cell != null ? cell.getInstrument() : InstrumentCellData.INACTIVE);
                         durRow.add(cell != null ? cell.getDuration() : 1);
                     }
                     grid.add(row);
@@ -651,11 +684,11 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     for (int c = 0; c < row.size(); c++) {
                         int instr = row.get(c);
                         int dur = (durRow != null && c < durRow.size()) ? durRow.get(c) : 1;
-                        InstrumentCell instrumentCell = new InstrumentCell(this, r + 1, c + 1);
-                        if (instr != InstrumentCell.INACTIVE) {
-                            instrumentCell.setInstrumentAndDuration(instr, dur, orchestra);
+                        InstrumentCellData instrumentCellData = new InstrumentCellData(r + 1, c + 1);
+                        if (instr != InstrumentCellData.INACTIVE) {
+                            instrumentCellData.setInstrumentAndDuration(instr, dur, orchestra);
                         }
-                        steps.get(c).getCells().add(instrumentCell);
+                        steps.get(c).getCells().add(instrumentCellData);
                     }
                 }
                 createTimeline();
@@ -716,7 +749,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                                 channelInstruments[channel] = sm.getData1();
                             } else if (command == ShortMessage.NOTE_ON && velocity > 0) {
                                 long tick = event.getTick();
-                                int instrument = (channel == 9) ? InstrumentCell.DRUM : channelInstruments[channel];
+                                int instrument = (channel == 9) ? InstrumentCellData.DRUM : channelInstruments[channel];
                                 allNotes.add(noteValue);
                                 activeNotes.computeIfAbsent(channel, k -> new HashMap<>()).put(noteValue, tick);
                                 activeNotes.get(channel).put(noteValue | (instrument << 16), tick);
@@ -724,7 +757,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                                 long endTick = event.getTick();
                                 Map<Integer, Long> channelActive = activeNotes.get(channel);
                                 if (channelActive != null) {
-                                    int instrument = (channel == 9) ? InstrumentCell.DRUM : channelInstruments[channel];
+                                    int instrument = (channel == 9) ? InstrumentCellData.DRUM : channelInstruments[channel];
                                     int key = noteValue | (instrument << 16);
                                     Long startTick = channelActive.remove(key);
                                     if (startTick != null) {
@@ -754,7 +787,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     List<Integer> row = new ArrayList<>();
                     List<Integer> durRow = new ArrayList<>();
                     for (int s = 0; s < totalSteps; s++) {
-                        row.add(InstrumentCell.INACTIVE);
+                        row.add(InstrumentCellData.INACTIVE);
                         durRow.add(1);
                     }
                     grid.add(row);
@@ -797,13 +830,13 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     for (int c = 0; c < row.size(); c++) {
                         int instr = row.get(c);
                         int dur = durRow.get(c);
-                        InstrumentCell instrumentCell = new InstrumentCell(this, r + 1, c + 1);
-                        if (instr != InstrumentCell.INACTIVE) {
-                            instrumentCell.setInstrumentAndDuration(instr, dur, orchestra);
+                        InstrumentCellData instrumentCellData = new InstrumentCellData(r + 1, c + 1);
+                        if (instr != InstrumentCellData.INACTIVE) {
+                            instrumentCellData.setInstrumentAndDuration(instr, dur, orchestra);
                         }
                         int finalC = c;
                         int finalR = r;
-                        Platform.runLater(() -> steps.get(finalC).getCells().add(finalR, instrumentCell));
+                        Platform.runLater(() -> steps.get(finalC).getCells().add(finalR, instrumentCellData));
                     }
                 }
                 Platform.runLater(() -> Platform.runLater(() -> {
@@ -837,24 +870,6 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
         if (mouseEvent.getButton() == MouseButton.PRIMARY) {
             Node node = mouseEvent.getSource() instanceof Node ? (Node) mouseEvent.getSource() : null;
             switch (node) {
-                case InstrumentCell instrumentCell -> {
-                    int currentInstrument = instrumentCell.getInstrument();
-                    if (currentInstrument == InstrumentCell.INACTIVE) {
-                        ContextMenu instrumentMenu = new ContextMenu();
-                        MenuItem drumItem = new MenuItem("Drum Kit");
-                        drumItem.setOnAction(event -> instrumentCell.setInstrument(InstrumentCell.DRUM, orchestra));
-                        instrumentMenu.getItems().add(drumItem);
-                        for (int i = 0; i < MAX_INSTRUMENTS; i++) {
-                            final int instr = i;
-                            MenuItem item = new MenuItem(orchestra[instr].getName().trim());
-                            item.setOnAction(event -> instrumentCell.setInstrument(instr, orchestra));
-                            instrumentMenu.getItems().add(item);
-                        }
-                        instrumentMenu.show(instrumentCell, mouseEvent.getScreenX(), mouseEvent.getScreenY());
-                    } else {
-                        instrumentCell.setInstrument(InstrumentCell.INACTIVE, orchestra);
-                    }
-                }
                 case NoteHeaderCell noteHeaderCell -> {
                     ContextMenu noteMenu = new ContextMenu();
                     NoteHeaderCell.NOTE_MAP.forEach((noteValue, noteName) -> {
@@ -864,30 +879,52 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     });
                     noteMenu.show(noteHeaderCell, mouseEvent.getScreenX(), mouseEvent.getScreenY());
                 }
+                case Label instrumentCell -> {
+                    InstrumentCellData instrumentCellData = (InstrumentCellData) instrumentCell.getUserData();
+                    int currentInstrument = instrumentCellData.getInstrument();
+                    if (currentInstrument == InstrumentCellData.INACTIVE) {
+                        ContextMenu instrumentMenu = new ContextMenu();
+                        MenuItem drumItem = new MenuItem("Drum Kit");
+                        drumItem.setOnAction(event -> instrumentCellData.setInstrument(InstrumentCellData.DRUM, orchestra));
+                        instrumentMenu.getItems().add(drumItem);
+                        for (int i = 0; i < MAX_INSTRUMENTS; i++) {
+                            final int instr = i;
+                            MenuItem item = new MenuItem(orchestra[instr].getName().trim());
+                            item.setOnAction(event -> instrumentCellData.setInstrument(instr, orchestra));
+                            instrumentMenu.getItems().add(item);
+                        }
+                        instrumentMenu.show(instrumentCell, mouseEvent.getScreenX(), mouseEvent.getScreenY());
+                    } else {
+                        instrumentCellData.setInstrument(InstrumentCellData.INACTIVE, orchestra);
+                    }
+                }
                 case null, default -> {
                 }
             }
         } else if (mouseEvent.getButton() == MouseButton.SECONDARY) {
             Node node = mouseEvent.getSource() instanceof Node ? (Node) mouseEvent.getSource() : null;
-            if (node instanceof InstrumentCell instrumentCell && instrumentCell.getInstrument() != InstrumentCell.INACTIVE) {
+            if (node instanceof NoteHeaderCell) return;
+            if (!(node instanceof Label instrumentCell)) return;
+            InstrumentCellData instrumentCellData = (InstrumentCellData) instrumentCell.getUserData();
+            if (instrumentCellData.getInstrument() != InstrumentCellData.INACTIVE) {
                 ContextMenu durationMenu = new ContextMenu();
                 for (int d = 1; d <= 16; d++) {
                     final int dur = d;
                     MenuItem item = new MenuItem("Duration: " + d + " step" + (d > 1 ? "s" : ""));
-                    item.setOnAction(event -> instrumentCell.setDuration(dur, orchestra));
+                    item.setOnAction(event -> instrumentCellData.setDuration(dur, orchestra));
                     durationMenu.getItems().add(item);
                 }
                 durationMenu.getItems().add(new SeparatorMenuItem());
                 MenuItem customItem = new MenuItem("Custom duration...");
                 customItem.setOnAction(event -> {
-                    TextInputDialog dialog = new TextInputDialog(String.valueOf(instrumentCell.getDuration()));
+                    TextInputDialog dialog = new TextInputDialog(String.valueOf(instrumentCellData.getDuration()));
                     dialog.setTitle("Set Duration");
                     dialog.setHeaderText("Enter duration in steps:");
                     dialog.showAndWait().ifPresent(result -> {
                         try {
                             int dur = Integer.parseInt(result);
                             if (dur >= 1) {
-                                instrumentCell.setDuration(dur, orchestra);
+                                instrumentCellData.setDuration(dur, orchestra);
                             }
                         } catch (NumberFormatException ignored) {
                         }

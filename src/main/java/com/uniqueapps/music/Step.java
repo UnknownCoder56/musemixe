@@ -8,7 +8,7 @@ import javafx.collections.ObservableList;
 public class Step {
 
     private final int index;
-    private final ListProperty<InstrumentCell> cells = new SimpleListProperty<>();
+    private final ListProperty<InstrumentCellData> cells = new SimpleListProperty<>();
 
     public Step(int index) {
         this.index = index;
@@ -19,11 +19,11 @@ public class Step {
         return index;
     }
 
-    public ListProperty<InstrumentCell> cellsProperty() {
+    public ListProperty<InstrumentCellData> cellsProperty() {
         return cells;
     }
 
-    public ObservableList<InstrumentCell> getCells() {
+    public ObservableList<InstrumentCellData> getCells() {
         return cells.get();
     }
 }

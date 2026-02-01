@@ -75,7 +75,7 @@ public class Player implements Runnable {
     }
 
     public static void playNoteOn(int instrumentIndex, int note) {
-        if (instrumentIndex == InstrumentCell.DRUM) {
+        if (instrumentIndex == InstrumentCellData.DRUM) {
             MidiChannel drumChannel = channels[DRUM_CHANNEL];
             drumChannel.noteOn(note, 100);
             return;
@@ -92,7 +92,7 @@ public class Player implements Runnable {
     }
 
     public static void playNoteOff(int instrumentIndex, int note) {
-        if (instrumentIndex == InstrumentCell.DRUM) {
+        if (instrumentIndex == InstrumentCellData.DRUM) {
             MidiChannel drumChannel = channels[DRUM_CHANNEL];
             drumChannel.noteOff(note);
             return;
