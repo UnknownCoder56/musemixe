@@ -1,4 +1,4 @@
-# MIDI Player
+# musemixe
 
 A modern JavaFX application for accessing and playing any MIDI instrument available on your device. This application demonstrates how to build JavaFX applications with a custom modern theme (AtlantaFX) that can be compiled into native executables using GraalVM and Gluon.
 
@@ -25,8 +25,8 @@ A modern JavaFX application for accessing and playing any MIDI instrument availa
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/UnknownCoder56/music.git
-cd music
+git clone https://github.com/UnknownCoder56/musemixe.git
+cd musemixe
 ```
 
 ### Build and Run
@@ -100,17 +100,17 @@ The native executable will provide faster startup times and lower memory consump
 ## Project Structure
 
 ```
-music/
+musemixe/
 ├── src/
 │   └── main/
 │       ├── java/
 │       │   ├── module-info.java
-│       │   └── com/uniqueapps/music/
-│       │       ├── MusicApplication.java    # Main application class
+│       │   └── com/uniqueapps/musemixe/
+│       │       ├── MusemixeApplication.java # Main application class
 │       │       ├── HomeController.java      # UI controller
 │       │       └── Player.java              # MIDI player implementation
 │       └── resources/
-│           └── com/uniqueapps/music/
+│           └── com/uniqueapps/musemixe/
 │               └── home.fxml                # UI layout definition
 ├── pom.xml                                  # Maven configuration
 └── README.md
