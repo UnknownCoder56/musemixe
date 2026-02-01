@@ -588,6 +588,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                             int endStep = ((s - 1 + dur) % steps.size()) + 1;
                             if (endStep == currentStep) {
                                 Player.playNoteOff(instr, noteHeaderCell.getNote());
+                                Platform.runLater(noteHeaderCell::highlightOff);
                             }
                         }
                     }
@@ -602,6 +603,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     int instr = currentCell.getInstrument();
                     if (instr != InstrumentCellData.INACTIVE) {
                         Player.playNoteOn(instr, noteHeaderCell.getNote());
+                        Platform.runLater(noteHeaderCell::highlightOn);
                     }
                 }
             }

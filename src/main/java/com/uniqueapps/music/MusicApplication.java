@@ -18,6 +18,7 @@ public class MusicApplication extends Application {
         Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
         FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(MusicApplication.class.getResource("home.fxml")));
         Scene scene = new Scene(loader.load(), 800, 600);
+        scene.getStylesheets().add(Objects.requireNonNull(MusicApplication.class.getResource("style.css")).toExternalForm());
         homeController = loader.getController();
         stage.setTitle("MIDI Player");
         stage.setScene(scene);

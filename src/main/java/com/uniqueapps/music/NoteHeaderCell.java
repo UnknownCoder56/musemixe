@@ -1,5 +1,6 @@
 package com.uniqueapps.music;
 
+import javafx.css.PseudoClass;
 import javafx.event.EventHandler;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
@@ -105,11 +106,12 @@ public class NoteHeaderCell extends Label {
     private int note;
     private final int row;
     private final int column;
+    private static final PseudoClass HIGHLIGHT = PseudoClass.getPseudoClass("highlighted");
 
     public NoteHeaderCell(EventHandler<MouseEvent> mouseHandler, int note, int row, int column) {
         super();
         setText(NOTE_MAP.get(note));
-        setStyle("-fx-text-fill: white; -fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
+        getStyleClass().add("note-header-cell");
         setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         VBox.setVgrow(this, Priority.ALWAYS);
         HBox.setHgrow(this, Priority.ALWAYS);
@@ -135,5 +137,13 @@ public class NoteHeaderCell extends Label {
 
     public int getColumn() {
         return column;
+    }
+
+    public void highlightOn() {
+        pseudoClassStateChanged(HIGHLIGHT, true);
+    }
+
+    public void highlightOff() {
+        pseudoClassStateChanged(HIGHLIGHT, false);
     }
 }

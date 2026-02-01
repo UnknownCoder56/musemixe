@@ -1,0 +1,11 @@
+.note-header-cell {
+    -fx-text-fill: white;
+    -fx-padding: 3px;
+    -fx-background-color: rgba(255,255,255,0.2);
+    -fx-border-color: gray;
+    -fx-border-width: 1px;
+}
+
+.note-header-cell:highlighted {
+    -fx-background-color: rgba(31,111,235,1.0);
+}
