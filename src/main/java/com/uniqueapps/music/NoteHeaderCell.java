@@ -1,17 +1,15 @@
 package com.uniqueapps.music;
 
 import javafx.event.EventHandler;
-import javafx.fxml.FXML;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 
 import java.util.LinkedHashMap;
 
-public class NoteHeaderCell extends StackPane {
-
-    @FXML private final Label noteLabel;
+public class NoteHeaderCell extends Label {
 
     public static final LinkedHashMap<Integer, String> NOTE_MAP = new LinkedHashMap<>();
     static {
@@ -110,18 +108,16 @@ public class NoteHeaderCell extends StackPane {
 
     public NoteHeaderCell(EventHandler<MouseEvent> mouseHandler, int note, int row, int column) {
         super();
-        setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
+        setText(NOTE_MAP.get(note));
+        setStyle("-fx-text-fill: white; -fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
+        setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        HBox.setHgrow(this, Priority.ALWAYS);
         setOnMouseClicked(mouseHandler);
+
         this.note = note;
         this.row = row;
         this.column = column;
-
-        Label label = new Label(NOTE_MAP.get(note));
-        label.setStyle("-fx-text-fill: white");
-        getChildren().clear();
-        getChildren().add(label);
-        StackPane.setAlignment(label, Pos.CENTER);
-        this.noteLabel = label;
     }
 
     public int getNote() {
@@ -130,7 +126,7 @@ public class NoteHeaderCell extends StackPane {
 
     public void setNote(int note) {
         this.note = note;
-        this.noteLabel.setText(NOTE_MAP.get(note));
+        setText(NOTE_MAP.get(note));
     }
 
     public int getRow() {

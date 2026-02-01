@@ -20,6 +20,7 @@ import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
@@ -126,17 +127,16 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
 
         noteHeaderColumn.setStyle("-fx-border-color: gray; -fx-border-width: 1px;");
         sequencerGrid.setStyle("-fx-border-color: gray; -fx-border-width: 1px;");
-        StackPane topLeftLabel = new StackPane();
-        topLeftLabel.setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
         Label labelRC = new Label("Note/Step");
-        labelRC.setStyle("-fx-text-fill: white");
-        topLeftLabel.getChildren().add(labelRC);
-        StackPane.setAlignment(topLeftLabel.getChildren().getFirst(), Pos.CENTER);
-        noteHeaderColumn.getChildren().addFirst(topLeftLabel);
+        labelRC.setStyle("-fx-text-fill: white; -fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
+        labelRC.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(labelRC, Priority.ALWAYS);
+        labelRC.setAlignment(Pos.CENTER);
+        labelRC.setTextAlignment(TextAlignment.CENTER);
+        noteHeaderColumn.getChildren().addFirst(labelRC);
         AtomicInteger index = new AtomicInteger(1);
         Arrays.stream(DEFAULT_NOTES).forEach(note -> {
             NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, note, index.get(), 0);
-            VBox.setVgrow(noteHeaderCell, Priority.ALWAYS);
             noteHeaderColumn.getChildren().add(index.get(), noteHeaderCell);
             index.getAndIncrement();
         });
@@ -161,17 +161,14 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                 column.setMaxWidth(STEP_WIDTH);
                 column.setSpacing(0);
                 column.setAlignment(Pos.TOP_CENTER);
-                StackPane stackPane = new StackPane();
-                stackPane.setStyle("-fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
                 Label labelC = new Label(String.valueOf(step.getIndex()));
-                labelC.setStyle("-fx-text-fill: white");
-                stackPane.getChildren().add(labelC);
-                StackPane.setAlignment(stackPane.getChildren().getFirst(), Pos.CENTER);
-                column.getChildren().add(stackPane);
-                for (InstrumentCell cell : step.getCells()) {
-                    VBox.setVgrow(cell, Priority.ALWAYS);
-                    column.getChildren().add(cell);
-                }
+                labelC.setStyle("-fx-text-fill: white; -fx-padding: 3px; -fx-background-color: rgba(255,255,255,0.2); -fx-border-color: gray; -fx-border-width: 1px;");
+                labelC.setMaxWidth(Double.MAX_VALUE);
+                HBox.setHgrow(labelC, Priority.ALWAYS);
+                labelC.setAlignment(Pos.CENTER);
+                labelC.setTextAlignment(TextAlignment.CENTER);
+                column.getChildren().add(labelC);
+                column.getChildren().addAll(step.getCells());
                 setGraphic(column);
             }
         });
@@ -404,7 +401,6 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
     public void addRowClicked() {
         int newRow = noteHeaderColumn.getChildren().size();
         NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, DEFAULT_NOTES[(newRow - 1) % DEFAULT_NOTES.length], newRow, 0);
-        VBox.setVgrow(noteHeaderCell, Priority.ALWAYS);
         noteHeaderColumn.getChildren().add(newRow, noteHeaderCell);
         for (int i = 0; i < steps.size(); i++) {
             InstrumentCell instrumentCell = new InstrumentCell(this, newRow, i + 1);
@@ -642,7 +638,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                 for (int i = 0; i < composition.notes().size(); i++) {
                     int noteValue = composition.notes().get(i);
                     NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, noteValue, i + 1, 0);
-                    noteHeaderCell.getChildren().add(i + 1, noteHeaderCell);
+                    noteHeaderColumn.getChildren().add(i + 1, noteHeaderCell);
                 }
                 for (int c = 1; c <= composition.steps(); c++) {
                     Step step = new Step(c);
@@ -784,10 +780,7 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                     int noteValue = notes.get(i);
                     NoteHeaderCell noteHeaderCell = new NoteHeaderCell(this, noteValue, i + 1, 0);
                     int finalI = i;
-                    Platform.runLater(() -> {
-                        VBox.setVgrow(noteHeaderCell, Priority.ALWAYS);
-                        noteHeaderColumn.getChildren().add(finalI + 1, noteHeaderCell);
-                    });
+                    Platform.runLater(() -> noteHeaderColumn.getChildren().add(finalI + 1, noteHeaderCell));
                 }
                 for (int c = 1; c <= totalSteps; c++) {
                     Step step = new Step(c);
@@ -809,16 +802,12 @@ public class HomeController implements Initializable, EventHandler<MouseEvent> {
                             instrumentCell.setInstrumentAndDuration(instr, dur, orchestra);
                         }
                         int finalC = c;
-                        CountDownLatch finalStepLatch = new CountDownLatch(1);
-                        Platform.runLater(() -> {
-                            steps.get(finalC).getCells().add(instrumentCell);
-                            finalStepLatch.countDown();
-                        });
-                        finalStepLatch.await();
+                        int finalR = r;
+                        Platform.runLater(() -> steps.get(finalC).getCells().add(finalR, instrumentCell));
                     }
                 }
-                createTimeline();
                 Platform.runLater(() -> Platform.runLater(() -> {
+                    createTimeline();
                     waitDialogWindow.hide();
                     new Alert(Alert.AlertType.INFORMATION, "MIDI imported: " + notes.size() + " notes, " + totalSteps + " steps, " + bpm + " BPM").showAndWait();
                 }));
