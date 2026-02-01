@@ -1,4 +1,4 @@
-package com.uniqueapps.music;
+package com.uniqueapps.musemixe;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;

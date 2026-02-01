@@ -1,4 +1,4 @@
-package com.uniqueapps.music;
+package com.uniqueapps.musemixe;
 
 import atlantafx.base.theme.PrimerDark;
 import javafx.application.Application;
