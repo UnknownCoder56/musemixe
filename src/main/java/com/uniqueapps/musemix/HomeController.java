@@ -1,4 +1,4 @@
-package com.uniqueapps.musemixe;
+package com.uniqueapps.musemix;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

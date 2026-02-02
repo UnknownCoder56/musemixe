@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.uniqueapps</groupId>
-    <artifactId>musemixe</artifactId>
+    <artifactId>musemix</artifactId>
     <version>2.0</version>
-    <name>musemixe</name>
+    <name>musemix</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -57,7 +57,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.uniqueapps.musemixe/com.uniqueapps.musemixe.MusemixeApplication</mainClass>
+                            <mainClass>com.uniqueapps.musemix/com.uniqueapps.musemix.MusemixApplication</mainClass>
                             <launcher>musemix</launcher>
                             <jlinkZipName>musemix</jlinkZipName>
                             <jlinkImageName>musemix</jlinkImageName>
@@ -73,11 +73,11 @@
                 <artifactId>gluonfx-maven-plugin</artifactId>
                 <version>1.0.28</version>
                 <configuration>
-                    <mainClass>com.uniqueapps.musemixe.MusemixeApplication</mainClass>
+                    <mainClass>com.uniqueapps.musemix.MusemixApplication</mainClass>
                     <graalvmHome>C:/Users/arpan/Downloads/graalvm-java23-windows-amd64-gluon-23+25.1-dev</graalvmHome>
                     <reflectionList>
-                        <list>com.uniqueapps.musemixe.HomeController</list>
-                        <list>com.uniqueapps.musemixe.Player</list>
+                        <list>com.uniqueapps.musemix.HomeController</list>
+                        <list>com.uniqueapps.musemix.Player</list>
                         <list>javafx.scene.layout.GridPane</list>
                         <list>javafx.scene.control.Tab</list>
                         <list>javafx.scene.control.Separator</list>
@@ -89,8 +89,8 @@
                         <list>javax.sound.midi.MidiSystem</list>
                     </reflectionList>
                     <jniList>
-                        <list>com.uniqueapps.musemixe.HomeController</list>
-                        <list>com.uniqueapps.musemixe.Player</list>
+                        <list>com.uniqueapps.musemix.HomeController</list>
+                        <list>com.uniqueapps.musemix.Player</list>
                         <list>com.sun.media.sound.DirectAudioDevice</list>
                         <list>com.sun.media.sound.DirectAudioDeviceProvider</list>
                         <list>com.sun.media.sound.PortMixerProvider</list>
@@ -106,14 +106,6 @@
                         <list>com.sun.media.sound.JDK13Services</list>
                         <list>javax.sound.midi.MidiSystem</list>
                     </jniList>
-                    <resourcesList>
-                        <list>META-INF/services/com.sun.media.sound.DirectAudioDeviceProvider</list>
-                        <list>META-INF/services/com.sun.media.sound.PortMixerProvider</list>
-                        <list>META-INF/services/javax.sound.sampled.spi.MixerProvider</list>
-                        <list>META-INF/services/javax.sound.midi.spi.MidiDeviceProvider</list>
-                        <list>com/sun/media/sound/.*</list>
-                        <list>sound.properties</list>
-                    </resourcesList>
                 </configuration>
             </plugin>
         </plugins>

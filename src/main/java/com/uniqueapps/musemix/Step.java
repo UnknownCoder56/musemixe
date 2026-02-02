@@ -1,4 +1,4 @@
-package com.uniqueapps.musemixe;
+package com.uniqueapps.musemix;
 
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;

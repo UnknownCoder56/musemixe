@@ -1,4 +1,4 @@
-package com.uniqueapps.musemixe;
+package com.uniqueapps.musemix;
 
 import javafx.css.PseudoClass;
 import javafx.event.EventHandler;

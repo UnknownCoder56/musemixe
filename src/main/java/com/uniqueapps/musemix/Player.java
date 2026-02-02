@@ -1,4 +1,4 @@
-package com.uniqueapps.musemixe;
+package com.uniqueapps.musemix;
 
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
